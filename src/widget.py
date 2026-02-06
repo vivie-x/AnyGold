@@ -142,16 +142,16 @@ class GoldPriceWidget:
 
             # 如果是伦敦金（索引2），使用4行显示详细信息
             if current_api_index == 2:
-                line1, line2, line3, line4 = self.london_gold_ws.get_detailed_info()
-                # 设置统一的小字体以确保所有信息都能显示
-                self.main_window.set_uniform_small_font()
+                line1, line2, line3, line4 = self.london_gold_ws.get_detailed_info(
+                    state['base_price'], state['last_alert_price'],
+                    self.last_update_time, change_vs_base,
+                    change_percent_vs_base, change_symbol
+                )
                 # 使用所有4个标签显示伦敦金信息
                 self.main_window.update_display(
                     line1, line2, line3, line4, price_color
                 )
             else:
-                # 恢复正常字体大小
-                self.main_window.restore_normal_fonts()
                 info_text1 = f"更新: {self.last_update_time} | API: {api_name}"
                 alert_info = f"上次提醒: {state['last_alert_price']:.2f}" if state['last_alert_price'] else "上次提醒: 无"
                 info_text2 = f"{alert_info} | 滚轮切换API | 右键关闭"
@@ -230,16 +230,16 @@ class GoldPriceWidget:
 
                 # 如果是伦敦金（索引2），使用4行显示详细信息
                 if current_api_index == 2:
-                    line1, line2, line3, line4 = self.london_gold_ws.get_detailed_info()
-                    # 设置统一的小字体以确保所有信息都能显示
-                    self.main_window.set_uniform_small_font()
+                    line1, line2, line3, line4 = self.london_gold_ws.get_detailed_info(
+                        state['base_price'], state['last_alert_price'],
+                        self.last_update_time, change_vs_base,
+                        change_percent_vs_base, change_symbol
+                    )
                     # 使用所有4个标签显示伦敦金信息
                     self.main_window.update_display(
                         line1, line2, line3, line4, price_color
                     )
                 else:
-                    # 恢复正常字体大小
-                    self.main_window.restore_normal_fonts()
                     info_text1 = f"更新: {self.last_update_time} | API: {api_name}"
                     alert_info = f"上次提醒: {state['last_alert_price']:.2f}" if state['last_alert_price'] else "上次提醒: 无"
                     info_text2 = f"{alert_info} | 滚轮切换API | 右键关闭"

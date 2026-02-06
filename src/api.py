@@ -426,28 +426,39 @@ class LondonGoldWebSocket:
                 print(f"价格转换失败: {e}")
                 return (None, "伦敦金: 转换错误", "")
 
-    def get_detailed_info(self) -> tuple:
+    def get_detailed_info(self, base_price: float, last_alert_price: Optional[float],
+                          update_time: str, change_vs_base: float,
+                          change_percent_vs_base: float, change_symbol: str) -> tuple:
         """
         获取详细信息文本（用于多行显示）
 
+        Args:
+            base_price: 基准价格
+            last_alert_price: 上次提醒价格
+            update_time: 更新时间
+            change_vs_base: 相对基准价格的变化
+            change_percent_vs_base: 相对基准价格的变化百分比
+            change_symbol: 变化符号 (↑/↓/→)
+
         Returns:
-            tuple: (买入价行, 卖出价行, 差价汇率行, 更新时间行)
+            tuple: (买入价行, 基准行, 更新和API行, 上次提醒和汇率行)
         """
         with self.lock:
             if self.latest_data is None or 'bid_cny' not in self.latest_data:
                 return ("伦敦金: 无数据", "", "", "")
 
-            # 第一行：买入价
-            line1 = f"买入价: ¥{self.latest_data['bid_cny']:.2f}/克 (${self.latest_data['bid']:.2f}/盎司)"
+            # 第一行：买入价（仅人民币/克，不显示盎司）
+            line1 = f"{self.latest_data['bid_cny']:.2f} 元/克"
 
-            # 第二行：卖出价
-            line2 = f"卖出价: ¥{self.latest_data['ask_cny']:.2f}/克 (${self.latest_data['ask']:.2f}/盎司)"
+            # 第二行：基准价格和变化
+            line2 = f"基准: {base_price:.2f}  {change_symbol} {change_vs_base:+.2f} ({change_percent_vs_base:+.2f}%)"
 
-            # 第三行：差价和汇率
-            line3 = f"价差: ${self.latest_data['spread_usd']:.2f} | 汇率: {self.latest_data['exchange_rate']:.4f}"
+            # 第三行：更新时间和API名称
+            line3 = f"更新: {update_time} | API: 伦敦金"
 
-            # 第四行：更新时间
-            line4 = f"更新时间: {self.latest_data['time']}"
+            # 第四行：上次提醒和汇率
+            alert_info = f"上次提醒: {last_alert_price:.2f}" if last_alert_price else "上次提醒: 无"
+            line4 = f"{alert_info} | 汇率: {self.latest_data['exchange_rate']:.4f}"
 
             return (line1, line2, line3, line4)
 

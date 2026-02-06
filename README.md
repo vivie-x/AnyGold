@@ -1,6 +1,23 @@
+
+
 # AnyGold - 实时黄金价格监控桌面小工具
 
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/vivie-x/AnyGold)
+[![Python](https://img.shields.io/badge/python-3.8+-brightgreen.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 一个简洁的 Windows 桌面小工具，用于实时监控黄金价格。
+
+## 📋 版本信息
+
+**当前版本**：v2.5.0
+
+### 主要特性
+- 🔄 实时价格更新，每 5 秒自动获取最新数据
+- 🔀 支持多数据源切换（浙商银行、民生银行、伦敦金）
+- 🌍 伦敦金 WebSocket 实时行情推送
+- 📊 价格变动追踪与智能提醒
+- 🎨 多主题支持（深色/浅色/透明）
 
 ## ✨ 功能特点
 
@@ -91,9 +108,9 @@ python AnyGold.py
 | `CURRENT_API_INDEX` | 0                       | 默认使用的数据源索引（0=浙商） |
 | `UPDATE_INTERVAL` | 5                       | 价格更新间隔（秒） |
 | `ALERT_THRESHOLD` | 1.0                     | 提醒阈值（%） |
-| `WINDOW_WIDTH` | 220                     | 窗口宽度（像素） |
+| `WINDOW_WIDTH` | 230                     | 窗口宽度（像素） |
 | `WINDOW_HEIGHT` | 110                     | 窗口高度（像素） |
-| `WINDOW_MIN_WIDTH` | 50                      | 最小窗口宽度 |
+| `WINDOW_MIN_WIDTH` | 80                      | 最小窗口宽度 |
 | `WINDOW_MIN_HEIGHT` | 25                      | 最小窗口高度 |
 | `WS_DOMAIN_API` | 动态获取地址                  | WebSocket 地址获取 API |
 | `EXCHANGE_RATE_CACHE_TIME` | 3600                    | 汇率缓存时间（秒） |
@@ -133,8 +150,21 @@ pyinstaller --onefile --windowed --icon=assets\icon.ico --name=AnyGold run.py
 
 - **config.py**：配置参数管理（API、窗口、WebSocket、汇率等配置）
 - **api.py**：黄金价格 API 调用（HTTP API、WebSocket、汇率转换）
-- **ui.py**：界面组件（主窗口、提醒弹窗、字体控制）
+  - `GoldPriceAPI` 类：负责获取浙商银行和民生银行黄金价格
+  - `ExchangeRateAPI` 类：负责获取美元兑人民币汇率
+  - `LondonGoldWebSocket` 类：负责伦敦金 WebSocket 连接和实时价格获取
+- **ui.py**：界面组件
+  - `MainWindow` 类：主窗口界面
+  - `AlertWindow` 类：价格变动提醒弹窗
 - **widget.py**：核心业务逻辑协调（价格更新、数据源切换、提醒触发）
+- **main.py**：程序入口点
+
+### 技术栈
+
+- **GUI 框架**：PySide6 (Qt6)
+- **网络请求**：requests
+- **WebSocket**：websocket-client
+- **数据解析**：beautifulsoup4
 
 ## 📝 数据来源
 
@@ -148,23 +178,46 @@ pyinstaller --onefile --windowed --icon=assets\icon.ico --name=AnyGold run.py
 - 数据特点：民生银行提供的黄金价格数据
 - 更新方式：HTTP 轮询，每 5 秒更新
 
-### 3. 伦敦金实时行情（新增）
+### 3. 伦敦金实时行情
 - 数据来源：通过 WebSocket 实时推送
 - WebSocket 地址：动态获取（`https://www.jrjr.com/api/getDomainInfo`）
 - 数据特点：
-  - 实时买入价和卖出价（美元/盎司）
-  - 自动汇率转换为人民币/克
+  - 实时买入价（美元/盎司）
+  - 自动汇率转换为人民币/克显示
   - 支持多级汇率源（主：ExchangeRate API，备：中国银行）
-  - 显示价差、汇率等详细信息
 - 更新方式：WebSocket 推送，实时更新
 
 **使用说明**：程序支持在三个数据源之间实时切换，通过 Ctrl+滚轮或中键点击即可切换。不同来源的价格可能存在差异，伦敦金价格已自动转换为人民币/克单位。
 
-## 📄 许可证
+## ❓ 常见问题
 
-MIT License
+**Q: 数据无法更新/显示"获取失败"？**  
+A: 检查网络连接，或尝试切换到其他数据源（Ctrl+滚轮）
 
-## 🤝 贡献
+**Q: 伦敦金价格显示不正常？**  
+A: WebSocket 连接需要时间，等待 5-10 秒；如长时间无数据，切换到其他数据源后再切回
 
-欢迎提出问题和建议！
+**Q: 如何修改更新频率或提醒阈值？**  
+A: 编辑 `src/config.py` 文件，修改 `UPDATE_INTERVAL` 和 `ALERT_THRESHOLD` 参数
 
+**Q: 如何设置开机自启动？**  
+A: 按 `Win+R` 输入 `shell:startup` 打开启动文件夹，将 exe 快捷方式放进去
+
+**Q: 程序占用资源情况？**  
+A: 内存约 50-80MB，CPU 空闲时几乎为 0，网络流量每小时约 1-2MB
+
+## 📄 开源协议
+
+本项目采用 [MIT License](LICENSE) 开源协议
+
+## 📧 联系方式
+
+- **作者**：vivie
+- **邮箱**：1632631306@qq.com
+
+
+
+
+**如果这个项目对你有帮助，欢迎 Star ⭐ 支持一下！**
+
+Made with ❤️ by vivie

@@ -43,16 +43,16 @@ class Config:
         "https://www.boc.cn/sourcedb/whpj/"  # 备用：中国银行官网汇率
     ]
     EXCHANGE_RATE_CACHE_TIME = 3600  # 汇率缓存时间（秒）
-    DEFAULT_EXCHANGE_RATE = 7.2  # 默认汇率（所有API都失败时使用）
+    DEFAULT_EXCHANGE_RATE = 6.95  # 默认汇率（所有API都失败时使用）
 
     # 单位转换常量
     OUNCE_TO_GRAM = 31.1035  # 1盎司 = 31.1035克
     PRICE_DECIMAL_PLACES = 2  # 价格保留小数位数
 
     # 窗口配置
-    WINDOW_WIDTH = 220
+    WINDOW_WIDTH = 230
     WINDOW_HEIGHT = 110
-    WINDOW_MIN_WIDTH = 50  # 最小窗口宽度
+    WINDOW_MIN_WIDTH = 80  # 最小窗口宽度
     WINDOW_MIN_HEIGHT = 25  # 最小窗口高度
     WINDOW_RESIZE_STEP = 10  # 滚轮调整步长
     WINDOW_INITIAL_X = 100

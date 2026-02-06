@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from .config import Config, ThemeConfig
+from .version import __version__
 
 
 class MainWindow(QWidget):
@@ -52,8 +53,6 @@ class MainWindow(QWidget):
         self.base_font_change = 10
         self.base_font_info = 9
 
-        # 伦敦金显示模式标记
-        self.is_london_gold_mode = False
 
         # 拖拽相关
         self.drag_position: Optional[QPoint] = None
@@ -80,7 +79,7 @@ class MainWindow(QWidget):
         # 启用透明背景
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        self.setWindowTitle("金价监控")
+        self.setWindowTitle(f"金价监控 v{__version__}")
         self.setGeometry(
             self.config.WINDOW_INITIAL_X,
             self.config.WINDOW_INITIAL_Y,
@@ -138,6 +137,8 @@ class MainWindow(QWidget):
 
     def _setup_labels(self):
         """设置显示标签"""
+        from PySide6.QtWidgets import QSizePolicy
+
         layout = QVBoxLayout()
         layout.setContentsMargins(8, 5, 8, 5)
         layout.setSpacing(2)
@@ -145,22 +146,26 @@ class MainWindow(QWidget):
         # 价格标签
         self.price_label = QLabel("加载中...")
         self.price_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.price_label)
+        self.price_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.price_label, 0, Qt.AlignmentFlag.AlignCenter)
 
         # 变化标签
         self.change_label = QLabel("")
         self.change_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.change_label)
+        self.change_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.change_label, 0, Qt.AlignmentFlag.AlignCenter)
 
         # 信息标签1
         self.info_label1 = QLabel("")
         self.info_label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.info_label1)
+        self.info_label1.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.info_label1, 0, Qt.AlignmentFlag.AlignCenter)
 
         # 信息标签2
         self.info_label2 = QLabel("")
         self.info_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.info_label2)
+        self.info_label2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.info_label2, 0, Qt.AlignmentFlag.AlignCenter)
 
         self.setLayout(layout)
         self._update_fonts()
@@ -207,43 +212,32 @@ class MainWindow(QWidget):
 
     def _update_fonts(self):
         """更新字体大小"""
-        # 如果是伦敦金模式，使用统一的小字体
-        if self.is_london_gold_mode:
-            font_size = max(int(self.base_font_info * self.scale_factor), 8)
-            font = QFont("微软雅黑", font_size)
-            self.price_label.setFont(font)
-            self.change_label.setFont(font)
-            self.info_label1.setFont(font)
-            self.info_label2.setFont(font)
-        else:
-            # 正常模式：使用不同大小的字体
-            font_size_price = max(int(self.base_font_price * self.scale_factor), 6)
-            font_size_change = max(int(self.base_font_change * self.scale_factor), 4)
-            font_size_info = max(int(self.base_font_info * self.scale_factor), 3)
+        # 所有API统一使用正常的字体大小
+        font_size_price = max(int(self.base_font_price * self.scale_factor), 6)
+        font_size_change = max(int(self.base_font_change * self.scale_factor), 4)
+        font_size_info = max(int(self.base_font_info * self.scale_factor), 3)
 
-            font_price = QFont("微软雅黑", font_size_price)
-            font_price.setBold(True)
-            self.price_label.setFont(font_price)
+        # 在一行模式下，字体要更大一些（比两行模式更大，避免跳变）
+        if self.scale_factor < 0.5:
+            font_size_price = max(int(self.base_font_price * self.scale_factor * 1.5), 7)
+        # 在两行模式下，第一行文字稍大一些
+        elif self.scale_factor < 0.6:
+            font_size_price = max(int(self.base_font_price * self.scale_factor * 1.3), 7)
 
-            self.change_label.setFont(QFont("微软雅黑", font_size_change))
-            self.info_label1.setFont(QFont("微软雅黑", font_size_info))
-            self.info_label2.setFont(QFont("微软雅黑", font_size_info))
+        font_price = QFont("微软雅黑", font_size_price)
+        font_price.setBold(True)
+        self.price_label.setFont(font_price)
 
-    def set_uniform_small_font(self):
-        """设置所有标签为统一的小字体（用于伦敦金详细信息显示）"""
-        self.is_london_gold_mode = True
-        font_size = max(int(self.base_font_info * self.scale_factor), 8)
-        small_font = QFont("微软雅黑", font_size)
+        self.change_label.setFont(QFont("微软雅黑", font_size_change))
+        self.info_label1.setFont(QFont("微软雅黑", font_size_info))
+        self.info_label2.setFont(QFont("微软雅黑", font_size_info))
 
-        self.price_label.setFont(small_font)
-        self.change_label.setFont(small_font)
-        self.info_label1.setFont(small_font)
-        self.info_label2.setFont(small_font)
+        # 设置标签最小高度，确保文字完整显示（字号 * 1.5 作为合理行高）
+        self.price_label.setMinimumHeight(int(font_size_price * 1.5))
+        self.change_label.setMinimumHeight(int(font_size_change * 1.5))
+        self.info_label1.setMinimumHeight(int(font_size_info * 1.5))
+        self.info_label2.setMinimumHeight(int(font_size_info * 1.5))
 
-    def restore_normal_fonts(self):
-        """恢复正常的字体大小（切换回其他数据源时使用）"""
-        self.is_london_gold_mode = False
-        self._update_fonts()
 
     def mousePressEvent(self, event):
         """鼠标按下事件"""
@@ -317,21 +311,41 @@ class MainWindow(QWidget):
 
     def _update_label_visibility(self):
         """根据缩放比例更新标签可见性"""
-        if self.scale_factor < 0.45:
+        layout = self.layout()
+        if not isinstance(layout, QVBoxLayout):
+            return
+
+        if self.scale_factor < 0.5:
             # 非常小：只显示价格
             self.change_label.hide()
             self.info_label1.hide()
             self.info_label2.hide()
+            layout.setSpacing(2)
         elif self.scale_factor < 0.6:
-            # 较小：显示价格和变化
+            # 较小：显示价格和变化（2行）
             self.change_label.show()
             self.info_label1.hide()
             self.info_label2.hide()
+            # 两行时：设置小的行间距（2像素），让两行有一点点距离
+            layout.setSpacing(2)
+            # 动态调整上下边距，让内容在窗口中居中
+            window_height = self.height()
+            # 估算两行内容的总高度（第一行字体更大）
+            font_size_price = max(int(self.base_font_price * self.scale_factor * 1.3), 7)
+            font_size_change = max(int(self.base_font_change * self.scale_factor), 4)
+            content_height = font_size_price + font_size_change + 3 + 5  # 加上间距2像素和余量5像素
+            # 计算需要的上下边距让内容居中
+            vertical_margin = max((window_height - content_height) // 3, 5)
+            layout.setContentsMargins(8, vertical_margin, 8, vertical_margin)
         else:
-            # 正常：显示全部
+            # 正常：显示全部（4行）
             self.change_label.show()
             self.info_label1.show()
             self.info_label2.show()
+            spacing = max(int(2 * self.scale_factor), 2)
+            layout.setSpacing(spacing)
+            # 恢复正常边距
+            layout.setContentsMargins(8, 5, 8, 5)
 
     def update_display(self, price_text: str, change_text: str,
                        info_text1: str, info_text2: str,

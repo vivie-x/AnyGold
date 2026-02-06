@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="anygold",
-    version="1.0.0",
+    version="2.5.0",
     author="AnyGold Team",
     description="实时黄金价格监控桌面小工具",
     long_description=open("README.md", encoding="utf-8").read(),

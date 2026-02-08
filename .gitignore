@@ -25,6 +25,7 @@ dist/
 build/
 *.egg-info/
 *.egg
+*.spec
 
 # 测试覆盖率
 .coverage

@@ -4,8 +4,8 @@ AnyGold 版本信息配置文件
 """
 
 # 版本号
-__version__ = "2.5.0"
-__version_info__ = (2, 5, 0)
+__version__ = "2.6.0"
+__version_info__ = (2, 6, 0)
 
 # 项目信息
 __title__ = "AnyGold"
@@ -18,7 +18,7 @@ __copyright__ = "Copyright © 2026 AnyGold Team"
 VERSION_HISTORY = """
 ## 版本历史
 
-### v2.5.0 (2026-02-05)
+### v2.6.0 (2026-02-08)
 - 当前版本
 
 ### v1.0.0

@@ -1,6 +1,23 @@
 """
-打包脚本 - 极致精简版
-只打包必需的模块，删除所有不需要的文件
+AnyGold 打包脚本 - 极致精简版
+
+功能说明：
+- 使用 PyInstaller 打包为单文件 exe
+- 排除所有不需要的 PySide6 模块，最大程度减小体积
+- 使用自定义 spec 文件精细控制打包内容
+- 自动过滤不需要的 DLL 和库文件
+
+使用方法：
+    python build.py
+
+输出：
+    dist/AnyGold.exe - 打包后的可执行文件
+
+注意事项：
+    1. 确保已安装所有依赖：pip install -r requirements.txt
+    2. 确保已安装 PyInstaller：pip install pyinstaller
+    3. 打包过程会生成 build/ 目录和 .spec 文件，已在 .gitignore 中忽略
+    4. 首次打包可能较慢，后续会利用缓存加快速度
 """
 
 import subprocess

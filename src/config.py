@@ -2,6 +2,8 @@
 配置文件 - 存放应用程序的各种配置参数
 """
 
+import os
+
 
 class Config:
     """应用程序配置类"""
@@ -60,10 +62,18 @@ class Config:
     TOPMOST_REFRESH_INTERVAL = 200  # 置顶刷新间隔（毫秒），用于保持窗口在任务栏上方
 
     # 弹窗配置
-    ALERT_WINDOW_WIDTH = 180
-    ALERT_WINDOW_HEIGHT = 80
+    ALERT_WINDOW_WIDTH = 400  # 增加宽度以容纳AI分析标签页
+    ALERT_WINDOW_HEIGHT = 300  # 增加高度以容纳AI分析内容
     FADE_STEP = 0.05  # 淡入淡出步长
     FADE_INTERVAL = 30  # 淡入淡出间隔（毫秒）
+
+    # AI 分析功能配置
+    AI_ENABLED = os.getenv('AI_ENABLED', 'true').lower() == 'true'  # AI功能开关
+    AI_PROVIDER = os.getenv('AI_PROVIDER', 'qwen')  # 支持: openai, qwen, deepseek
+    AI_API_KEY = os.getenv('AI_API_KEY', '')  # 从环境变量读取API Key
+    AI_MODEL = os.getenv('AI_MODEL', 'qwen-plus')  # 默认模型
+    AI_MAX_TOKENS = int(os.getenv('AI_MAX_TOKENS', '300'))  # 最大返回token数
+    AI_CALL_LIMIT_PER_DAY = int(os.getenv('AI_CALL_LIMIT_PER_DAY', '20'))  # 每日调用次数限制
 
 
 class ThemeConfig:

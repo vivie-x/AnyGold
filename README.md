@@ -18,6 +18,7 @@
 - 🌍 伦敦金 WebSocket 实时行情推送
 - 📊 价格变动追踪与智能提醒
 - 🎨 多主题支持（深色/浅色/透明）
+- 🤖 **AI 智能分析**：基于大模型提供价格变动分析和投资建议
 
 ## ✨ 功能特点
 
@@ -30,6 +31,11 @@
 - 🖱️ **灵活交互**：左键拖拽、右键关闭、点击滚轮切换数据源
 - 🔧 **窗口缩放**：滚轮调整窗口大小
 - 📌 **窗口置顶**：始终显示在其他窗口之上
+- 🤖 **AI 智能分析**（可选）：价格变动时自动提供 AI 分析建议
+  - 支持多个大模型（OpenAI、通义千问、Deepseek）
+  - 智能分析价格驱动因素和短期走势
+  - 提供买入/持有/卖出操作建议
+  - 成本控制（每日调用限额、结果缓存）
 
 ## 📁 项目结构
 
@@ -41,10 +47,12 @@ AnyGold/
 │   ├── config.py           # 配置文件
 │   ├── api.py              # API 接口模块
 │   ├── ui.py               # UI 界面模块
-│   └── widget.py           # 核心业务逻辑
+│   ├── widget.py           # 核心业务逻辑
+│   └── ai_analyzer.py      # AI 分析模块（新增）
 ├── assets/                 # 资源文件目录
 ├── AnyGold.py              # 原始单文件版本（保留兼容）
 ├── requirements.txt        # Python 依赖
+├── .env.example            # 环境变量配置示例
 ├── setup.py                # 安装配置
 ├── run.py                  # 快速启动脚本
 └── README.md               # 项目说明
@@ -68,6 +76,8 @@ pip install -r requirements.txt
 - `requests>=2.25.0` - HTTP 请求库
 - `websocket-client>=1.5.0` - WebSocket 客户端
 - `beautifulsoup4>=4.9.0` - HTML 解析（用于中国银行汇率获取）
+- `openai>=1.12.0` - OpenAI SDK（AI 功能，可选）
+- `python-dotenv>=1.0.0` - 环境变量管理（AI 功能，可选）
 
 ### 运行程序
 
@@ -85,6 +95,81 @@ python -m src.main
 ```bash
 python AnyGold.py
 ```
+
+## 🤖 AI 智能分析功能（可选）
+
+### 功能概述
+
+当黄金价格出现显著变动（超过 1%）时，AI 智能分析功能将自动：
+1. 分析价格变动的可能驱动因素（经济指标、地缘政治等）
+2. 预判短期走势（1-3天）
+3. 提供操作建议（买入/持有/卖出）及核心理由
+
+### 支持的模型
+
+| 提供商 | 模型选项 | 特点 |
+|--------|----------|------|
+| **通义千问** | qwen-plus, qwen-turbo, qwen-max | 推荐，性价比高，速度快 |
+| **OpenAI** | gpt-3.5-turbo, gpt-4, gpt-4-turbo | 经典模型，分析质量高 |
+| **Deepseek** | deepseek-chat, deepseek-coder | 新兴模型，成本较低 |
+
+### 配置方法
+
+1. **复制配置模板**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **编辑 `.env` 文件，填入配置**
+   ```bash
+   # 启用AI功能
+   AI_ENABLED=true
+   
+   # 选择提供商（qwen/openai/deepseek）
+   AI_PROVIDER=qwen
+   
+   # 填入您的 API Key
+   AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxx
+   
+   # 选择模型
+   AI_MODEL=qwen-plus
+   
+   # 控制成本
+   AI_MAX_TOKENS=300
+   AI_CALL_LIMIT_PER_DAY=20
+   ```
+
+3. **获取 API Key**
+   - **通义千问**：访问 [DashScope控制台](https://dashscope.console.aliyun.com/apiKey)
+   - **OpenAI**：访问 [OpenAI API Keys](https://platform.openai.com/api-keys)
+   - **Deepseek**：访问 [Deepseek API Keys](https://platform.deepseek.com/api_keys)
+
+### 成本估算
+
+基于默认配置（每日最多 20 次调用，每次 300 tokens）：
+
+| 提供商 | 模型 | 预计日成本 | 预计月成本 |
+|--------|------|-----------|-----------|
+| 通义千问 | qwen-plus | ¥0.02 | ¥0.60 |
+| OpenAI | gpt-3.5-turbo | ¥0.15 | ¥4.50 |
+| Deepseek | deepseek-chat | ¥0.01 | ¥0.30 |
+
+*注：实际成本可能因价格波动和使用情况有所不同*
+
+### 成本控制机制
+
+1. **每日调用限额**：默认 20 次/天（可配置）
+2. **智能缓存**：相同价格变动（±0.1%）的分析结果缓存 5 分钟
+3. **按需触发**：仅在价格变动超过阈值（1%）时触发
+4. **可选功能**：可通过配置完全关闭，不影响核心功能
+
+### 免责声明
+
+⚠️ **重要提示**：
+- AI 生成的分析建议仅供参考，不构成投资建议
+- 投资有风险，决策需谨慎，盈亏自负
+- 建议结合多方信息和个人风险承受能力做出投资决策
+- 本工具开发者不对任何投资损失承担责任
 
 ## 🖱️ 操作说明
 
@@ -148,15 +233,17 @@ pyinstaller --onefile --windowed --icon=assets\icon.ico --name=AnyGold run.py
 
 ### 模块职责
 
-- **config.py**：配置参数管理（API、窗口、WebSocket、汇率等配置）
+- **config.py**：配置参数管理（API、窗口、WebSocket、汇率、AI 等配置）
 - **api.py**：黄金价格 API 调用（HTTP API、WebSocket、汇率转换）
   - `GoldPriceAPI` 类：负责获取浙商银行和民生银行黄金价格
   - `ExchangeRateAPI` 类：负责获取美元兑人民币汇率
   - `LondonGoldWebSocket` 类：负责伦敦金 WebSocket 连接和实时价格获取
+- **ai_analyzer.py**：AI 智能分析（价格变动分析、投资建议生成）
+  - `AIAnalyzer` 类：负责调用大模型 API，提供智能分析建议
 - **ui.py**：界面组件
   - `MainWindow` 类：主窗口界面
-  - `AlertWindow` 类：价格变动提醒弹窗
-- **widget.py**：核心业务逻辑协调（价格更新、数据源切换、提醒触发）
+  - `AlertWindow` 类：价格变动提醒弹窗（含 AI 分析标签页）
+- **widget.py**：核心业务逻辑协调（价格更新、数据源切换、提醒触发、AI 分析集成）
 - **main.py**：程序入口点
 
 ### 技术栈
@@ -165,6 +252,7 @@ pyinstaller --onefile --windowed --icon=assets\icon.ico --name=AnyGold run.py
 - **网络请求**：requests
 - **WebSocket**：websocket-client
 - **数据解析**：beautifulsoup4
+- **AI 集成**：openai（支持多个提供商）
 
 ## 📝 数据来源
 
@@ -205,6 +293,21 @@ A: 按 `Win+R` 输入 `shell:startup` 打开启动文件夹，将 exe 快捷方�
 
 **Q: 程序占用资源情况？**  
 A: 内存约 50-80MB，CPU 空闲时几乎为 0，网络流量每小时约 1-2MB
+
+**Q: AI 功能如何启用？**  
+A: 复制 `.env.example` 为 `.env`，填入 API Key，设置 `AI_ENABLED=true`
+
+**Q: AI 分析没有显示？**  
+A: 检查 `.env` 配置是否正确，API Key 是否有效；查看是否超过每日调用限额
+
+**Q: AI 功能会影响核心功能吗？**  
+A: 不会，AI 功能完全独立，即使配置错误或 API 失败也不影响价格监控
+
+**Q: 如何关闭 AI 功能？**  
+A: 在 `.env` 中设置 `AI_ENABLED=false`，或直接删除 `.env` 文件
+
+**Q: AI 分析的成本如何？**  
+A: 使用默认配置（通义千问 qwen-plus），每月成本约 ¥0.60；可通过调整每日限额控制成本
 
 ## 📄 开源协议
 

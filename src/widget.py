@@ -2,6 +2,7 @@
 Widget 模块 - 黄金价格小工具核心逻辑 (PySide6 版本)
 """
 
+import threading
 from datetime import date
 from typing import Optional
 
@@ -11,6 +12,7 @@ from PySide6.QtCore import QTimer
 from .config import Config
 from .api import GoldPriceAPI, LondonGoldWebSocket
 from .ui import MainWindow, AlertWindow
+from .ai_analyzer import AIAnalyzer
 
 
 class GoldPriceWidget:
@@ -19,6 +21,9 @@ class GoldPriceWidget:
     def __init__(self):
         self.config = Config()
         self.api = GoldPriceAPI()
+
+        # 初始化AI分析器
+        self.ai_analyzer = AIAnalyzer(self.config) if self.config.AI_ENABLED else None
 
         # 初始化伦敦金 WebSocket 客户端
         self.london_gold_ws = LondonGoldWebSocket()
@@ -78,8 +83,8 @@ class GoldPriceWidget:
         # 异步触发后台更新
         # (下次定时器触发时会自动更新)
 
-    def _show_alert(self, change_percent: float, api_name: str):
-        """显示价格变动提醒"""
+    def _show_alert(self, change_percent: float, api_name: str, current_price: float, base_price: float):
+        """显示价格变动提醒，并异步获取AI分析"""
         # 关闭已有的提醒窗口
         if self.current_alert_window:
             try:
@@ -91,13 +96,47 @@ class GoldPriceWidget:
             finally:
                 self.current_alert_window = None
 
-        # 创建新的提醒窗口
+        # 创建新的提醒窗口（带AI功能）
+        ai_enabled = self.ai_analyzer is not None and self.config.AI_ENABLED
         self.current_alert_window = AlertWindow(
             self.main_window,
             change_percent,
             self.main_window.theme_index,  # 传递主题索引
-            api_name  # 传递 API 名称
+            api_name,  # 传递 API 名称
+            ai_enabled  # 传递AI启用状态
         )
+
+        # 如果启用AI，异步获取分析
+        if ai_enabled:
+            def fetch_ai_analysis():
+                """后台线程获取AI分析"""
+                result = self.ai_analyzer.get_suggestion(
+                    current_price=current_price,
+                    change_percent=change_percent,
+                    base_price=base_price
+                )
+                # 在主线程更新UI
+                try:
+                    if self.current_alert_window and shiboken6.isValid(self.current_alert_window):
+                        self.current_alert_window.update_ai_suggestion(result)
+                except (RuntimeError, AttributeError):
+                    pass  # 窗口已关闭，忽略
+
+            def refresh_ai_analysis():
+                """刷新AI分析（清除缓存后重新获取）"""
+                # 清除当前价格的缓存
+                cache_key = self.ai_analyzer._get_cache_key(current_price, change_percent)
+                with self.ai_analyzer.lock:
+                    if cache_key in self.ai_analyzer.cache:
+                        del self.ai_analyzer.cache[cache_key]
+                # 重新获取
+                fetch_ai_analysis()
+
+            # 设置刷新回调
+            self.current_alert_window.set_refresh_callback(refresh_ai_analysis)
+
+            # 启动后台线程获取AI分析
+            threading.Thread(target=fetch_ai_analysis, daemon=True).start()
 
     def _update_display_from_cache(self):
         """从缓存数据更新显示（用于快速切换API）"""
@@ -210,7 +249,7 @@ class GoldPriceWidget:
                     change_percent_vs_last_alert = change_percent_vs_base
 
                 if abs(change_percent_vs_last_alert) >= self.config.ALERT_THRESHOLD:
-                    self._show_alert(change_percent_vs_last_alert, api_name)
+                    self._show_alert(change_percent_vs_last_alert, api_name, price_data, state['base_price'])
                     state['last_alert_price'] = price_data
 
 

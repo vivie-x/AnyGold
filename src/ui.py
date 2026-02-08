@@ -9,7 +9,8 @@ from typing import Callable, Optional
 from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QEasingCurve, QTimer
 from PySide6.QtGui import QFont, QColor, QPainter, QBrush
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QLabel, QVBoxLayout, QGraphicsOpacityEffect
+    QApplication, QWidget, QLabel, QVBoxLayout, QGraphicsOpacityEffect,
+    QTabWidget, QTextEdit, QPushButton, QHBoxLayout
 )
 
 from .config import Config, ThemeConfig
@@ -394,7 +395,8 @@ class MainWindow(QWidget):
 class AlertWindow(QWidget):
     """提醒弹窗类"""
 
-    def __init__(self, parent: QWidget, change_percent: float, theme_index: int, api_name: str = ""):
+    def __init__(self, parent: QWidget, change_percent: float, theme_index: int, 
+                 api_name: str = "", ai_enabled: bool = False):
         """
         初始化提醒弹窗
 
@@ -403,12 +405,14 @@ class AlertWindow(QWidget):
             change_percent: 变化百分比
             theme_index: 主题索引 (0=深色, 1=浅色, 2=透明)
             api_name: API名称
+            ai_enabled: 是否启用AI分析功能
         """
         super().__init__()
         self.config = Config()
         self.theme_index = theme_index
         self.change_percent = change_percent
         self.api_name = api_name
+        self.ai_enabled = ai_enabled
 
         self._setup_window()
         self._setup_content()
@@ -443,7 +447,7 @@ class AlertWindow(QWidget):
         """设置内容"""
         layout = QVBoxLayout()
         layout.setContentsMargins(10, 8, 10, 8)
-        layout.setSpacing(2)
+        layout.setSpacing(5)
 
         # 根据主题配置颜色
         if self.theme_index == 0:  # 深色主题
@@ -464,32 +468,201 @@ class AlertWindow(QWidget):
         if self.api_name:
             direction = f"{direction} - {self.api_name}"
 
-        # 标题
-        title_label = QLabel(direction)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet(f"color: {text_color}; background: transparent;")
-        title_font = QFont("微软雅黑", 9)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        layout.addWidget(title_label)
+        # 如果启用AI功能，使用标签页
+        if self.ai_enabled:
+            # 创建标签页控件
+            self.tab_widget = QTabWidget()
+            self.tab_widget.setStyleSheet(f"""
+                QTabWidget::pane {{
+                    border: none;
+                    background: transparent;
+                }}
+                QTabBar::tab {{
+                    background: {'#2a2a2a' if self.theme_index != 1 else '#e0e0e0'};
+                    color: {text_color};
+                    padding: 5px 15px;
+                    margin-right: 2px;
+                    border-top-left-radius: 4px;
+                    border-top-right-radius: 4px;
+                }}
+                QTabBar::tab:selected {{
+                    background: {'#3a3a3a' if self.theme_index != 1 else '#f0f0f0'};
+                    font-weight: bold;
+                }}
+                QTabBar::tab:hover {{
+                    background: {'#4a4a4a' if self.theme_index != 1 else '#d0d0d0'};
+                }}
+            """)
 
-        # 百分比
-        percent_label = QLabel(f"{self.change_percent:+.2f}%")
-        percent_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        percent_label.setStyleSheet(f"color: {percent_color}; background: transparent;")
-        percent_font = QFont("微软雅黑", 14)
-        percent_font.setBold(True)
-        percent_label.setFont(percent_font)
-        layout.addWidget(percent_label)
+            # 第一个标签页：价格信息
+            price_tab = QWidget()
+            price_layout = QVBoxLayout()
+            price_layout.setContentsMargins(5, 5, 5, 5)
+            price_layout.setSpacing(2)
 
-        # 提示
-        hint_label = QLabel("点击关闭")
-        hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        hint_label.setStyleSheet("color: gray; background: transparent;")
-        hint_label.setFont(QFont("微软雅黑", 8))
-        layout.addWidget(hint_label)
+            # 标题
+            title_label = QLabel(direction)
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            title_label.setStyleSheet(f"color: {text_color}; background: transparent;")
+            title_font = QFont("微软雅黑", 10)
+            title_font.setBold(True)
+            title_label.setFont(title_font)
+            price_layout.addWidget(title_label)
+
+            # 百分比
+            percent_label = QLabel(f"{self.change_percent:+.2f}%")
+            percent_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            percent_label.setStyleSheet(f"color: {percent_color}; background: transparent;")
+            percent_font = QFont("微软雅黑", 18)
+            percent_font.setBold(True)
+            percent_label.setFont(percent_font)
+            price_layout.addWidget(percent_label)
+
+            # 提示
+            hint_label = QLabel("点击关闭")
+            hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            hint_label.setStyleSheet("color: gray; background: transparent;")
+            hint_label.setFont(QFont("微软雅黑", 8))
+            price_layout.addWidget(hint_label)
+
+            price_tab.setLayout(price_layout)
+            self.tab_widget.addTab(price_tab, "价格变动")
+
+            # 第二个标签页：AI分析
+            ai_tab = QWidget()
+            ai_layout = QVBoxLayout()
+            ai_layout.setContentsMargins(5, 5, 5, 5)
+            ai_layout.setSpacing(5)
+
+            # AI分析文本框
+            self.ai_text = QTextEdit()
+            self.ai_text.setReadOnly(True)
+            self.ai_text.setStyleSheet(f"""
+                QTextEdit {{
+                    background: {'#1a1a1a' if self.theme_index != 1 else '#f8f8f8'};
+                    color: {text_color};
+                    border: 1px solid {'#3a3a3a' if self.theme_index != 1 else '#d0d0d0'};
+                    border-radius: 4px;
+                    padding: 8px;
+                }}
+            """)
+            self.ai_text.setFont(QFont("微软雅黑", 9))
+            self.ai_text.setText("正在获取AI分析...")
+            ai_layout.addWidget(self.ai_text)
+
+            # 免责声明
+            disclaimer = QLabel("⚠️ 免责声明: AI建议仅供参考，不构成投资建议")
+            disclaimer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            disclaimer.setStyleSheet("color: orange; background: transparent;")
+            disclaimer.setFont(QFont("微软雅黑", 7))
+            disclaimer.setWordWrap(True)
+            ai_layout.addWidget(disclaimer)
+
+            # 按钮区域
+            button_layout = QHBoxLayout()
+            button_layout.setSpacing(5)
+
+            # 刷新按钮
+            self.refresh_button = QPushButton("🔄 刷新")
+            self.refresh_button.setStyleSheet(f"""
+                QPushButton {{
+                    background: {'#3a3a3a' if self.theme_index != 1 else '#e0e0e0'};
+                    color: {text_color};
+                    border: none;
+                    border-radius: 3px;
+                    padding: 5px 10px;
+                    font-size: 9px;
+                }}
+                QPushButton:hover {{
+                    background: {'#4a4a4a' if self.theme_index != 1 else '#d0d0d0'};
+                }}
+                QPushButton:disabled {{
+                    background: {'#2a2a2a' if self.theme_index != 1 else '#f0f0f0'};
+                    color: gray;
+                }}
+            """)
+            self.refresh_button.setEnabled(False)  # 初始禁用，等AI分析完成后启用
+            button_layout.addWidget(self.refresh_button)
+
+            # 调用次数标签
+            self.calls_label = QLabel("")
+            self.calls_label.setStyleSheet(f"color: gray; background: transparent;")
+            self.calls_label.setFont(QFont("微软雅黑", 7))
+            button_layout.addWidget(self.calls_label)
+
+            button_layout.addStretch()
+            ai_layout.addLayout(button_layout)
+
+            ai_tab.setLayout(ai_layout)
+            self.tab_widget.addTab(ai_tab, "AI分析")
+
+            layout.addWidget(self.tab_widget)
+        else:
+            # 没有AI功能，使用原始的简单布局
+            # 标题
+            title_label = QLabel(direction)
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            title_label.setStyleSheet(f"color: {text_color}; background: transparent;")
+            title_font = QFont("微软雅黑", 9)
+            title_font.setBold(True)
+            title_label.setFont(title_font)
+            layout.addWidget(title_label)
+
+            # 百分比
+            percent_label = QLabel(f"{self.change_percent:+.2f}%")
+            percent_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            percent_label.setStyleSheet(f"color: {percent_color}; background: transparent;")
+            percent_font = QFont("微软雅黑", 14)
+            percent_font.setBold(True)
+            percent_label.setFont(percent_font)
+            layout.addWidget(percent_label)
+
+            # 提示
+            hint_label = QLabel("点击关闭")
+            hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            hint_label.setStyleSheet("color: gray; background: transparent;")
+            hint_label.setFont(QFont("微软雅黑", 8))
+            layout.addWidget(hint_label)
 
         self.setLayout(layout)
+
+    def update_ai_suggestion(self, result: dict):
+        """
+        更新AI分析建议
+
+        Args:
+            result: AI分析结果字典，包含 success, suggestion/error, cached, calls_remaining
+        """
+        if not self.ai_enabled:
+            return
+
+        if result['success']:
+            self.ai_text.setText(result['suggestion'])
+            cached_text = " (缓存)" if result.get('cached', False) else ""
+            self.calls_label.setText(f"今日剩余: {result.get('calls_remaining', 0)}次{cached_text}")
+        else:
+            error_msg = result.get('error', '未知错误')
+            self.ai_text.setText(f"❌ 分析失败\n\n{error_msg}")
+            self.calls_label.setText(f"今日剩余: {result.get('calls_remaining', 0)}次")
+
+        # 启用刷新按钮
+        self.refresh_button.setEnabled(True)
+
+    def set_refresh_callback(self, callback):
+        """
+        设置刷新按钮的回调函数
+
+        Args:
+            callback: 点击刷新时调用的函数
+        """
+        if self.ai_enabled:
+            self.refresh_button.clicked.connect(lambda: self._on_refresh(callback))
+
+    def _on_refresh(self, callback):
+        """刷新AI分析"""
+        self.ai_text.setText("正在重新获取AI分析...")
+        self.refresh_button.setEnabled(False)
+        callback()
 
     def paintEvent(self, event):
         """绘制背景"""
@@ -504,7 +677,7 @@ class AlertWindow(QWidget):
             bg_color = QColor(250, 250, 250, 240)
             border_color = QColor(100, 100, 100)
         else:  # 透明主题
-            bg_color = QColor(0, 0, 0, 1)  # 几乎完全透明的黑色
+            bg_color = QColor(0, 0, 0, 200)  # 半透明黑色
             border_color = QColor(255, 255, 255, 100)  # 半透明白色边框
 
         painter.setBrush(QBrush(bg_color))
@@ -532,8 +705,11 @@ class AlertWindow(QWidget):
         self.animation.start()
 
     def mousePressEvent(self, event):
-        """点击关闭"""
-        self._fade_out()
+        """点击关闭（仅在非AI标签页或点击非交互区域时）"""
+        # 如果点击的是第一个标签页（价格信息），关闭窗口
+        if not self.ai_enabled or (hasattr(self, 'tab_widget') and 
+                                   self.tab_widget.currentIndex() == 0):
+            self._fade_out()
         event.accept()
 
     def close_window(self):

@@ -11,6 +11,9 @@ env/
 .venv/
 .env/
 
+# 环境变量文件（包含敏感信息）
+.env
+
 # IDE 配置
 .idea/
 .vscode/
